@@ -49,6 +49,7 @@ function setPlaying(playing) {
   state = playing ? 'playing' : 'paused';
   hud.showScreen(playing ? 'none' : 'pause');
   document.body.classList.toggle('playing', playing);
+  if (playing && touch) touch.consumeLookDelta(); // drop drag accumulated while paused
 }
 
 function newGame() {
