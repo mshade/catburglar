@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Cat Burglar</title>
   <style>
     html, body { margin: 0; height: 100%; overflow: hidden; background: #111;
@@ -24,6 +25,21 @@
       color: #fff9; font-size: 20px; pointer-events: none; }
     #mute { position: fixed; top: 14px; right: 18px; color: #fff; font-size: 20px;
       pointer-events: none; }
+    #game { touch-action: none; }
+    .touch-ui { display: none; touch-action: none; -webkit-user-select: none; user-select: none; z-index: 5; }
+    #touch-joystick { position: fixed; left: 24px; bottom: 24px; width: 120px; height: 120px;
+      border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); }
+    #touch-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px;
+      border-radius: 50%; background: rgba(255,255,255,0.35); transform: translate(-50%, -50%); }
+    #touch-grab { position: fixed; right: 28px; bottom: 40px; width: 96px; height: 96px;
+      border-radius: 50%; font-size: 17px; border: none; background: #e8964a; color: #221; font-weight: bold; }
+    #touch-pause { position: fixed; top: 12px; left: 14px; width: 44px; height: 44px;
+      border-radius: 10px; border: none; background: rgba(255,255,255,0.15); color: #fff; font-size: 20px; }
+    #touch-mute { position: fixed; top: 12px; right: 14px; width: 44px; height: 44px;
+      border-radius: 10px; border: none; background: rgba(255,255,255,0.15); color: #fff; font-size: 20px; }
+    body.touch.playing #touch-joystick, body.touch.playing #touch-pause, body.touch.playing #touch-mute { display: block; }
+    body.touch.playing #touch-grab.visible { display: block; }
+    body.touch #prompt, body.touch #mute, body.touch #crosshair { display: none !important; }
   </style>
 </head>
 <body>
@@ -45,6 +61,10 @@
     <p>Your time: <span id="win-time">0:00</span></p>
     <button id="play-again">Play again</button>
   </div>
+  <div id="touch-joystick" class="touch-ui"><div id="touch-knob"></div></div>
+  <button id="touch-grab" class="touch-ui">🐾 Grab</button>
+  <button id="touch-pause" class="touch-ui">⏸</button>
+  <button id="touch-mute" class="touch-ui">🔊</button>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
