@@ -111,10 +111,12 @@ document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) {
     state = 'playing';
     hud.showScreen('none');
-  } else if (state === 'playing') {
-    for (const k of Object.keys(keys)) keys[k] = false;
-    state = 'paused';
-    hud.showScreen('pause');
+  } else {
+    for (const k of Object.keys(keys)) keys[k] = false; // drop held keys on any unlock
+    if (state === 'playing') {
+      state = 'paused';
+      hud.showScreen('pause');
+    }
   }
 });
 
