@@ -16,6 +16,17 @@ Open http://localhost:5173 (any modern macOS browser).
 sneak into grab range. Listen for meows to find hidden cats, and chase runners
 into dead-end rooms to corner them.
 
+## Play on a phone or iPad
+
+    npm run dev -- --host
+
+Then open `http://<your-mac-lan-ip>:5173` on the phone (same Wi-Fi network —
+the dev server prints the address). Landscape is recommended.
+
+**Touch controls:** left joystick to move — push gently to sneak quietly,
+push to the edge to sprint loudly · drag anywhere else to look · tap 🐾 to
+grab when it appears · ⏸ pauses · 🔊 mutes.
+
 ## Develop
 
     npm test        # vitest unit tests (generation, pathfinding, AI, collision)

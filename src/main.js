@@ -8,6 +8,7 @@ import { createPlayer, updatePlayer, grabbableCat, EYE_HEIGHT } from './sim/play
 import { makeRng } from './gen/rng.js';
 import { Hud } from './hud.js';
 import { AudioFX } from './audio.js';
+import { TouchControls, isTouchDevice } from './touch.js';
 
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -30,6 +31,25 @@ let house = null, worldGroup = null, player = null;
 let cats = [], catMeshes = new Map();
 let caught = 0, elapsed = 0;
 const keys = {};
+
+const IS_TOUCH = isTouchDevice();
+const TOUCH_LOOK_SENS = 0.005; // rad per px of drag
+let touch = null;
+if (IS_TOUCH) {
+  document.body.classList.add('touch');
+  touch = new TouchControls({
+    onGrab: () => { if (state === 'playing') tryGrab(); },
+    onPause: () => { if (state === 'playing') setPlaying(false); },
+    onMute: () => touch.setMuted(audio.toggleMute()),
+  });
+}
+
+// Single place that flips between playing and paused UI state.
+function setPlaying(playing) {
+  state = playing ? 'playing' : 'paused';
+  hud.showScreen(playing ? 'none' : 'pause');
+  document.body.classList.toggle('playing', playing);
+}
 
 function newGame() {
   if (worldGroup) scene.remove(worldGroup);
@@ -64,8 +84,9 @@ function tryGrab() {
   caught++;
   hud.setCaught(caught, cats.length);
   if (caught === cats.length) {
-    state = 'won';            // set before exiting lock so the handler skips the pause screen
-    document.exitPointerLock();
+    state = 'won'; // set before exiting lock so the handler skips the pause screen
+    document.body.classList.remove('playing');
+    if (!IS_TOUCH) document.exitPointerLock();
     hud.showWin(elapsed);
   }
 }
@@ -83,7 +104,11 @@ function playCatSound(ev, cat) {
 // --- input ---
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
-  if (e.code === 'KeyM') hud.setMuted(audio.toggleMute());
+  if (e.code === 'KeyM') {
+    const muted = audio.toggleMute();
+    hud.setMuted(muted);
+    if (touch) touch.setMuted(muted);
+  }
   if (e.code === 'KeyE' && state === 'playing') tryGrab();
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -99,27 +124,28 @@ document.addEventListener('mousemove', (e) => {
 function requestLock() {
   canvas.requestPointerLock()?.catch?.(() => {});
 }
+function startOrResume() {
+  if (IS_TOUCH) setPlaying(true);
+  else requestLock();
+}
 document.getElementById('start-screen').addEventListener('click', () => {
   audio.init();
   if (!house) newGame();
-  requestLock();
+  startOrResume();
 });
-document.getElementById('pause-screen').addEventListener('click', requestLock);
+document.getElementById('pause-screen').addEventListener('click', startOrResume);
 document.getElementById('play-again').addEventListener('click', () => {
   newGame();
-  hud.showScreen('pause'); // fallback "click to resume" if the relock is throttled
-  requestLock();
+  if (!IS_TOUCH) hud.showScreen('pause'); // fallback "click to resume" if the relock is throttled
+  startOrResume();
 });
 document.addEventListener('pointerlockchange', () => {
+  if (IS_TOUCH) return;
   if (document.pointerLockElement === canvas) {
-    state = 'playing';
-    hud.showScreen('none');
+    setPlaying(true);
   } else {
     for (const k of Object.keys(keys)) keys[k] = false; // drop held keys on any unlock
-    if (state === 'playing') {
-      state = 'paused';
-      hud.showScreen('pause');
-    }
+    if (state === 'playing') setPlaying(false);
   }
 });
 
@@ -132,16 +158,24 @@ function frame(now) {
 
   if (state === 'playing') {
     elapsed += dt;
-    updatePlayer(player, {
+    const analogActive = touch && (touch.move.x !== 0 || touch.move.z !== 0);
+    updatePlayer(player, analogActive ? { analog: touch.move } : {
       forward: keys.KeyW, back: keys.KeyS, left: keys.KeyA, right: keys.KeyD,
       sprint: keys.ShiftLeft || keys.ShiftRight,
     }, house.grid, dt);
+    if (touch) {
+      const { dx, dy } = touch.consumeLookDelta();
+      player.yaw -= dx * TOUCH_LOOK_SENS;
+      player.pitch = Math.max(-1.4, Math.min(1.4, player.pitch - dy * TOUCH_LOOK_SENS));
+    }
     const world = simWorld();
     for (const c of cats) {
       for (const ev of c.update(dt, world)) playCatSound(ev, c);
     }
     hud.setTime(elapsed);
-    hud.setPrompt(!!grabbableCat(player, cats));
+    const target = grabbableCat(player, cats);
+    hud.setPrompt(!!target && !IS_TOUCH);
+    if (touch) touch.setGrabVisible(!!target);
   }
 
   if (player) {
