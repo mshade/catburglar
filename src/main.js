@@ -94,18 +94,21 @@ document.addEventListener('mousemove', (e) => {
 });
 
 // --- screens & pointer lock ---
+// requestPointerLock returns a promise in Chromium and rejects if the relock is
+// throttled; the visible overlay already handles that, so swallow the rejection.
+function requestLock() {
+  canvas.requestPointerLock()?.catch?.(() => {});
+}
 document.getElementById('start-screen').addEventListener('click', () => {
   audio.init();
   if (!house) newGame();
-  canvas.requestPointerLock();
+  requestLock();
 });
-document.getElementById('pause-screen').addEventListener('click', () => {
-  canvas.requestPointerLock();
-});
+document.getElementById('pause-screen').addEventListener('click', requestLock);
 document.getElementById('play-again').addEventListener('click', () => {
   newGame();
   hud.showScreen('pause'); // fallback "click to resume" if the relock is throttled
-  canvas.requestPointerLock();
+  requestLock();
 });
 document.addEventListener('pointerlockchange', () => {
   if (document.pointerLockElement === canvas) {
