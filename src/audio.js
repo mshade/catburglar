@@ -11,7 +11,7 @@ export class AudioFX {
     if (this.ctx) return;
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.5;
+    this.master.gain.value = this.muted ? 0 : 0.5;
     this.master.connect(this.ctx.destination);
   }
 

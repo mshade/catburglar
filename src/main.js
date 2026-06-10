@@ -112,6 +112,7 @@ document.addEventListener('pointerlockchange', () => {
     state = 'playing';
     hud.showScreen('none');
   } else if (state === 'playing') {
+    for (const k of Object.keys(keys)) keys[k] = false;
     state = 'paused';
     hud.showScreen('pause');
   }
