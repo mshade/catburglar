@@ -4,6 +4,11 @@ import { findPath, lineOfSight } from '../gen/grid.js';
 export const WANDER = 'wander', HIDING = 'hiding', FLEEING = 'fleeing', CAUGHT = 'caught';
 
 // Exported (and mutable) so playtest tuning and tests can adjust in one place.
+// Design invariant — sneak-grab must stay possible:
+//   max(hiddenSpookBase, NOISE_WALK * hiddenSpookNoiseFactor) < GRAB_RANGE
+//   currently max(1.1, 4 * 0.35) = 1.4 < 1.7
+// If you tune these (or NOISE_SPRINT/GRAB_RANGE), keep a hidden cat
+// grabbable on a slow approach and flushable by a sprint.
 export const TUNING = {
   wanderSpeed: 1.6,
   hideSpeed: 5.0,
