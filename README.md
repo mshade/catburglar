@@ -3,7 +3,11 @@
 A first-person cat-catching game. Five cats are loose in a procedurally
 generated house — find them, sneak up, and grab them all as fast as you can.
 
-## Play
+**▶ Play it now: https://mshade.github.io/catburglar/** — desktop or
+phone/tablet (touch controls included). Deployed automatically from `main`
+by GitHub Actions.
+
+## Play locally
 
     npm install
     npm run dev
