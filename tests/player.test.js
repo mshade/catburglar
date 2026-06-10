@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createPlayer, updatePlayer, resolveMove, grabbableCat,
+  createPlayer, updatePlayer, resolveMove, grabbableCat, analogSpeedNoise,
   WALK_SPEED, SPRINT_SPEED, NOISE_IDLE, NOISE_WALK, NOISE_SPRINT,
+  DEAD_ZONE, WALK_POINT,
 } from '../src/sim/player.js';
 import { fromAscii } from './helpers.js';
 
@@ -89,5 +90,90 @@ describe('grabbableCat', () => {
     const p = { x: 2, z: 5, yaw: 0 };
     const near = at(2, 4.2), far = at(2, 3.6);
     expect(grabbableCat(p, [far, near])).toBe(near);
+  });
+});
+
+describe('analogSpeedNoise', () => {
+  it('is idle inside the dead zone', () => {
+    expect(analogSpeedNoise(0)).toEqual({ speed: 0, noise: NOISE_IDLE });
+    expect(analogSpeedNoise(DEAD_ZONE - 0.01)).toEqual({ speed: 0, noise: NOISE_IDLE });
+  });
+
+  it('reaches exactly walk speed and walk noise at WALK_POINT', () => {
+    const { speed, noise } = analogSpeedNoise(WALK_POINT);
+    expect(speed).toBeCloseTo(WALK_SPEED, 5);
+    expect(noise).toBeCloseTo(NOISE_WALK, 5);
+  });
+
+  it('reaches exactly sprint speed and sprint noise at full deflection', () => {
+    const { speed, noise } = analogSpeedNoise(1);
+    expect(speed).toBeCloseTo(SPRINT_SPEED, 5);
+    expect(noise).toBeCloseTo(NOISE_SPRINT, 5);
+  });
+
+  it('interpolates within the sneak zone', () => {
+    const { speed, noise } = analogSpeedNoise(0.35); // halfway to WALK_POINT
+    expect(speed).toBeCloseTo(WALK_SPEED * 0.5, 5);
+    expect(noise).toBeCloseTo(NOISE_IDLE + (NOISE_WALK - NOISE_IDLE) * 0.5, 5);
+  });
+
+  it('interpolates within the sprint zone', () => {
+    const { speed, noise } = analogSpeedNoise(0.85); // halfway from WALK_POINT to 1
+    expect(speed).toBeCloseTo(WALK_SPEED + (SPRINT_SPEED - WALK_SPEED) * 0.5, 5);
+    expect(noise).toBeCloseTo(NOISE_WALK + (NOISE_SPRINT - NOISE_WALK) * 0.5, 5);
+  });
+
+  it('is continuous at the walk point', () => {
+    const below = analogSpeedNoise(WALK_POINT - 1e-9);
+    const above = analogSpeedNoise(WALK_POINT + 1e-9);
+    expect(Math.abs(below.speed - above.speed)).toBeLessThan(1e-6);
+    expect(Math.abs(below.noise - above.noise)).toBeLessThan(1e-6);
+  });
+});
+
+describe('updatePlayer with analog input', () => {
+  it('moves forward along -z at sprint speed on full push', () => {
+    const g = openRoom();
+    const p = createPlayer({ x: 3, y: 2 });
+    updatePlayer(p, { analog: { x: 0, z: 1 } }, g, 0.1);
+    expect(p.x).toBeCloseTo(3.5);
+    expect(p.z).toBeCloseTo(2.5 - SPRINT_SPEED * 0.1);
+    expect(p.noiseRadius).toBe(NOISE_SPRINT);
+  });
+
+  it('creeps quietly on a slight push', () => {
+    const g = openRoom();
+    const p = createPlayer({ x: 3, y: 2 });
+    updatePlayer(p, { analog: { x: 0, z: 0.35 } }, g, 0.1);
+    expect(p.z).toBeCloseTo(2.5 - WALK_SPEED * 0.5 * 0.1, 5);
+    expect(p.noiseRadius).toBeLessThan(NOISE_WALK);
+    expect(p.noiseRadius).toBeGreaterThan(NOISE_IDLE);
+  });
+
+  it('treats the dead zone as idle', () => {
+    const g = openRoom();
+    const p = createPlayer({ x: 3, y: 2 });
+    updatePlayer(p, { analog: { x: 0.05, z: 0.05 } }, g, 0.1);
+    expect(p.x).toBe(3.5);
+    expect(p.z).toBe(2.5);
+    expect(p.speed).toBe(0);
+    expect(p.noiseRadius).toBe(NOISE_IDLE);
+  });
+
+  it('respects yaw: strafe right at yaw 90° moves along -z', () => {
+    const g = openRoom();
+    const p = createPlayer({ x: 3, y: 2 });
+    p.yaw = Math.PI / 2;
+    updatePlayer(p, { analog: { x: 1, z: 0 } }, g, 0.1);
+    expect(p.x).toBeCloseTo(3.5, 5);
+    expect(p.z).toBeCloseTo(2.5 - SPRINT_SPEED * 0.1, 5);
+  });
+
+  it('clamps magnitude above 1', () => {
+    const g = openRoom();
+    const p = createPlayer({ x: 3, y: 2 });
+    updatePlayer(p, { analog: { x: 3, z: 4 } }, g, 0.1); // mag 5 → clamped to 1
+    const dist = Math.hypot(p.x - 3.5, p.z - 2.5);
+    expect(dist).toBeCloseTo(SPRINT_SPEED * 0.1, 5);
   });
 });
