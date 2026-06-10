@@ -4,16 +4,19 @@ import { FLOOR, DOOR, WALL, HIDE, reachableCells } from '../src/gen/grid.js';
 import { makeRng } from '../src/gen/rng.js';
 
 describe('splitLeaves', () => {
-  it('tiles the footprint exactly with leaves of bounded size', () => {
-    const rng = makeRng(1);
+  // Leaf dims: min 7 (MIN_LEAF), max 18 (BIG_ROOM_MAX — occasional big rooms may be kept unsplit).
+  // Each seed must tile the footprint exactly (area == 41*31).
+  const seeds = Array.from({ length: 10 }, (_, i) => i + 1);
+  it.each(seeds)('seed %i: tiles 41x31 with leaves of bounded size', (seed) => {
+    const rng = makeRng(seed);
     const leaves = splitLeaves(rng, { x: 0, y: 0, w: 41, h: 31 });
     let area = 0;
     for (const l of leaves) {
       area += l.w * l.h;
       expect(l.w).toBeGreaterThanOrEqual(7);
       expect(l.h).toBeGreaterThanOrEqual(7);
-      expect(l.w).toBeLessThanOrEqual(13);
-      expect(l.h).toBeLessThanOrEqual(13);
+      expect(l.w).toBeLessThanOrEqual(18);
+      expect(l.h).toBeLessThanOrEqual(18);
     }
     expect(area).toBe(41 * 31);
   });

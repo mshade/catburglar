@@ -2,7 +2,7 @@ import { Grid, FLOOR, DOOR, FURN, HIDE, reachableCells } from './grid.js';
 import { makeRng } from './rng.js';
 
 export const HOUSE_W = 41, HOUSE_H = 31;
-const MIN_LEAF = 7, MAX_LEAF = 13;
+const MIN_LEAF = 7, MAX_LEAF = 13, BIG_ROOM_MAX = 18;
 const EXTRA_DOOR_RATIO = 0.3;
 const MIN_ROOMS = 8, MIN_HIDE_SPOTS = 8;
 const NUM_CATS = 5, MIN_CAT_DIST = 10;
@@ -12,7 +12,8 @@ export function splitLeaves(rng, rect) {
   const { x, y, w, h } = rect;
   const canW = w >= MIN_LEAF * 2, canH = h >= MIN_LEAF * 2;
   if (!canW && !canH) return [rect];
-  if (w <= MAX_LEAF && h <= MAX_LEAF && rng.chance(0.2)) return [rect]; // keep an occasional big room
+  // occasionally keep a splittable leaf as one big room
+  if (w <= BIG_ROOM_MAX && h <= BIG_ROOM_MAX && rng.chance(0.2)) return [rect];
   let vertical;
   if (canW && canH) vertical = w === h ? rng.chance(0.5) : w > h;
   else vertical = canW;
