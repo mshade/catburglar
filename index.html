@@ -3,10 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <title>Cat Burglar</title>
-  <style>html, body { margin: 0; height: 100%; overflow: hidden; } #game { display: block; width: 100%; height: 100%; }</style>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111;
+      font-family: ui-rounded, 'Trebuchet MS', system-ui, sans-serif; }
+    #game { display: block; width: 100%; height: 100%; }
+    .overlay { position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px; color: #fff;
+      background: rgba(10, 10, 18, 0.78); text-align: center; cursor: pointer; }
+    .overlay h1 { font-size: 56px; margin: 0; }
+    .overlay p { font-size: 18px; line-height: 1.6; margin: 0; color: #ddd; }
+    .overlay button { font-size: 20px; padding: 10px 28px; border-radius: 10px;
+      border: none; cursor: pointer; background: #e8964a; color: #221; font-weight: bold; }
+    .hidden { display: none !important; }
+    #status { position: fixed; top: 14px; left: 0; right: 0; display: flex;
+      justify-content: center; gap: 28px; color: #fff; font-size: 22px;
+      text-shadow: 0 1px 3px #000; pointer-events: none; }
+    #prompt { position: fixed; bottom: 18%; left: 0; right: 0; text-align: center;
+      color: #ffe; font-size: 24px; text-shadow: 0 1px 3px #000; pointer-events: none; }
+    #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      color: #fff9; font-size: 20px; pointer-events: none; }
+    #mute { position: fixed; top: 14px; right: 18px; color: #fff; font-size: 20px;
+      pointer-events: none; }
+  </style>
 </head>
 <body>
   <canvas id="game"></canvas>
+  <div id="status" class="hidden"><span id="counter">🐱 0 / 5</span><span id="timer">0:00</span></div>
+  <div id="prompt" class="hidden">Press E to grab the cat</div>
+  <div id="crosshair" class="hidden">+</div>
+  <div id="mute" class="hidden">🔇</div>
+  <div id="start-screen" class="overlay">
+    <h1>🐱 Cat Burglar</h1>
+    <p>Five cats are loose in the house. Catch them all!</p>
+    <p>WASD move &middot; mouse look &middot; Shift sprint &middot; E grab &middot; M mute<br/>
+       Walk slowly to sneak up — cats hear you running.</p>
+    <p><strong>Click to play</strong></p>
+  </div>
+  <div id="pause-screen" class="overlay hidden"><h1>Paused</h1><p>Click to resume</p></div>
+  <div id="win-screen" class="overlay hidden">
+    <h1>All cats caught! 🎉</h1>
+    <p>Your time: <span id="win-time">0:00</span></p>
+    <button id="play-again">Play again</button>
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
